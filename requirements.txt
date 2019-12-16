@@ -1,0 +1,4 @@
+telegram
+pyTelegramBotAPI==3.6.6
+telebot
+selenium
