@@ -32,7 +32,8 @@ Hihi = u'\U0001F601'
 @bot.message_handler(commands=["login"])
 def mystat_login(message):
     bot.send_message(
-        message.chat.id, "Для входа в Mystat вы должны указать Ваш логин и пароль. Введите сначала логин.")
+        message.chat.id, "Привет дружище, меня зовут Степа и я буду помогать тебе , на пути к становлению IT-специалистом!!")
+        message.chat.id, "Введи ка мне логин чтоюы я смог получить информацию которая тебе в дальнейшем понадобится)")
     dbworker.set_state(
         message.chat.id, config.Mystat_logins_steps.S_ENTER_LOGIN_MYSTAT.value)
 
@@ -42,7 +43,7 @@ def user_entering_name(message):
     global login_mystat
     login_mystat = message.text
     bot.send_message(
-        message.chat.id, "Логин принят. Напишите теперь Ваш пароль.")
+        message.chat.id, "Логин принят. Теперь введи пароль.")
     dbworker.set_state(
         message.chat.id, config.Mystat_logins_steps.S_ENTER_PASS_MYSTAT.value)
 
@@ -55,6 +56,7 @@ def user_entering_age(message):
         message.chat.id, "Пароль принят, выполняем вход в систему Mystat.")
     bot.send_message(message.chat.id, "Заходим в систему Mystat с логином: " +
                      str(login_mystat)+" и паролем: "+str(pass_mystat)+".")
+         message.chat.id, "Поздравляю , теперь ты мой босс и я буду выполнять все твои запросы!!!")
     dbworker.set_state(message.chat.id, config.Mystat_logins_steps.S_ENTER_SYSTEM_MYSTAT.value)
 
     driver = webdriver.Chrome()
