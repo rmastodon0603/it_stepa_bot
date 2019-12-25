@@ -13,6 +13,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from time import sleep
 
+import datetime
+import calendar
+
 # Объявление переменных
 bot = telebot.TeleBot(token=tokens.telegram)
 logger = telebot.logger
@@ -99,7 +102,7 @@ def user_entering_age(message):
     driver.quit()
     markup = types.ReplyKeyboardMarkup()
     markup.row('Расписание', 'Статистика аккаунта')
-    markup.row('Отправить жалобу / предложение', 'Контакты', 'Настройки ( персонализировать бота )')
+    markup.row('Отправить жалобу / предложение', 'Контакты', 'Настройки')
     bot.send_message(message.chat.id, "Выберите пункт из доступного меню:", reply_markup=markup)
 
 #Вызов декоратора, если человек нажал в меню кнопку "Расписание". Подключение к расписанию. Вывод инлайн клавиатуры работы с расписанием.
@@ -296,18 +299,95 @@ def shedule_global(message):
     sleep(10)
     driver.quit()
 
-#Вызов test команды
-@bot.message_handler(commands=["test"])
-def test_function_name(message):
-    driver = webdriver.Chrome()
-    sleep(5)
-    driver.quit()
 
-"""
-@bot.message_handler(regexp="Контакты")
-def shedule_global(message):
-"""
+@bot.message_handler(regexp="Отправить жалобу / предложение")
+def mystat_report(message):
+    bot.send_message(message.chat.id, "Раздел отправки жалоб и предложений в учебную часть ШАГа")
 
+
+    cid = message.chat.id
+    mid = message.message_id
+    uid = message.from_user.id
+    click_kb = types.InlineKeyboardMarkup()
+    mystat_report_button = types.InlineKeyboardButton("Хочу отправить жалобу", callback_data='mystat_report_button_clicked')
+    mystat_prepose_button = types.InlineKeyboardButton("Хочу отправить предложение", callback_data='mystat_prepose_button_clicked')
+    click_kb.row(mystat_report_button)
+    click_kb.row(mystat_prepose_button)
+    bot.send_message(cid, "<b>И что ты решил отправлять в учёбную часть?</b>", parse_mode="HTML",
+                     reply_markup=click_kb, disable_web_page_preview=True)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'mystat_report_button_clicked')
+def command_click_inline(call):
+    cid = call.message.chat.id
+    uid = call.from_user.id
+    mid = call.message.message_id
+    #Редактируем кнопки
+    if uid not in CLICKED_BY:
+        CLICKED_BY.append(uid)
+        click_kb_edited = types.InlineKeyboardMarkup()
+        click_edited = types.InlineKeyboardButton("Напишите в следующем сообщении полный текст Вашей жалобы..", callback_data='mystat_report_button_clicked')
+        click_kb_edited.row(click_edited)
+        bot.edit_message_text("<b>Выбран элемент отправки жалобы..</b>", cid, mid, reply_markup=click_kb_edited, parse_mode="HTML")
+        bot.answer_callback_query(call.id, text="Расписание будет выведено в следующем сообщении,  {}.".format(call.from_user.first_name))
+        #основная функция работы с жалобой
+
+
+        driver = webdriver.Chrome()
+        driver.get("https://mystat.itstep.org/ru/main/signal/page/index")
+
+        login_element = WebDriverWait(driver, 10).until(
+            ec.presence_of_element_located((By.ID, 'username')))
+        login_element.send_keys("Kova_pu05")
+        sleep(1)
+        pass_element = WebDriverWait(driver, 10).until(
+            ec.presence_of_element_located((By.ID, 'password')))
+        pass_element.send_keys("51gB58ZF")
+        pass_element.submit()
+        mystat_text_report = WebDriverWait(driver, 10).until(
+            ec.presence_of_element_located((By.XPATH,
+                                            "/html/body/mystat/ng-component/ng-component/div[@class='wrap']/div[@class='content']/div[@class='wrapper']/ng-component/div[@class='signal-section']/div[@class='row']/div[@class='col-md-12 item']/div[@class='signal-form-container']/div[@class='body-form']/form[@class='ng-invalid ng-dirty ng-touched']/div[@class='form-group'][3]/textarea[@class='form-control ng-pristine ng-invalid ng-touched']")))
+        sleep(10)
+        driver.quit()
+    else:
+        bot.answer_callback_query(call.id, text="Напишите текст жалобы в следующем сообщении и отправьте его мне!")
+
+
+@bot.message_handler(regexp="Настройки")
+def settings_stepa(message):
+    bot.send_message(message.chat.id, "Вы в настройках..")
+    cid = message.chat.id
+    mid = message.message_id
+    uid = message.from_user.id
+    click_kb = types.InlineKeyboardMarkup()
+    exit_mystat = types.InlineKeyboardButton("Выйти из учётной записи майстат", callback_data='exit_mystat_clicked')
+    click_kb.row(exit_mystat)
+    bot.send_message(cid, "<b>Вы находитесь в меню раздела настроек: </b>", parse_mode="HTML",
+                     reply_markup=click_kb, disable_web_page_preview=True)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'exit_mystat_clicked')
+def command_click_inline(call):
+    cid = call.message.chat.id
+    uid = call.from_user.id
+    mid = call.message.message_id
+    #Редактируем кнопки
+    if uid not in CLICKED_BY:
+        CLICKED_BY.append(uid)
+        click_kb_edited = types.InlineKeyboardMarkup()
+        click_edited = types.InlineKeyboardButton("Проивзодится выход из системы Mystat..", callback_data='exit_mystat_clicked')
+        click_kb_edited.row(click_edited)
+        bot.edit_message_text("<b>Вы выбрали выйти из майстат</b>", cid, mid, reply_markup=click_kb_edited, parse_mode="HTML")
+        bot.answer_callback_query(call.id, text="Выходим из майстата,  {}.".format(call.from_user.first_name))
+
+        #основная функция работы с жалобой
+        global login_mystat
+        global pass_mystat
+        login_mystat = ""
+        pass_mystat = ""
+        bot.send_message(cid, "Выход из майстат проведён успешно.. Зайти обратно можно за счёт команды /login ")
+    else:
+        bot.answer_callback_query(call.id, text="Я уже вышел из учётной записи майстат!")
 # Обновляем запросы по сообщениям
 if __name__ == '__main__':
     bot.polling(none_stop=True)
