@@ -14,3 +14,6 @@ class Mystat_logins_steps(Enum):
     S_ENTER_LOGIN_MYSTAT = "1"
     S_ENTER_PASS_MYSTAT = "2"
     S_ENTER_SYSTEM_MYSTAT = "3"
+
+    #Шаги работы с командой автора
+    S_AUTHOR_START = "10"

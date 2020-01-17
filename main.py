@@ -13,6 +13,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from time import sleep
 
+
+from sqlite_db_worker import init_db
+from sqlite_db_worker import add_message
+from sqlite_db_worker import count_messages
+from sqlite_db_worker import list_messages
+from sqlite_db_worker import user_id_in_base
+from sqlite_db_worker import list_of_user_ids
+
 import datetime
 import calendar
 
@@ -20,6 +28,8 @@ import calendar
 bot = telebot.TeleBot(token=tokens.telegram)
 logger = telebot.logger
 telebot.logger.setLevel(logging.DEBUG)
+
+AUTHOR_ID = 186928299
 
 login_mystat = ''
 pass_mystat = ''
@@ -31,9 +41,22 @@ now = datetime.datetime.now()
 #Объявление смайлов для работы бота
 Hihi = u'\U0001F601'
 
+
+@bot.message_handler(commands=["start"])
+def mystat_login(message):
+    if user_id_in_base(user_id=message.chat.id) == False:
+        add_message(user_id=message.chat.id, text=str(message.text))
+    bot.send_message(
+        message.chat.id, "Классно, что ты решил поработать со Стёпой! Воспользуйся командой /login , чтобы получить "
+                         "больше нужных функций!")
+
+
 #Старт работы с ботом. Функция /login работы с ботом. Отправка сообщения с просьбой ввести логин.
 @bot.message_handler(commands=["login"])
 def mystat_login(message):
+    if user_id_in_base(user_id=message.chat.id) == False:
+        add_message(user_id=message.chat.id, text=str(message.text))
+
     bot.send_message(
         message.chat.id, "Для входа в Mystat вы должны указать Ваш логин и пароль. Введите сначала логин.")
     dbworker.set_state(
@@ -388,8 +411,34 @@ def command_click_inline(call):
         bot.send_message(cid, "Выход из майстат проведён успешно.. Зайти обратно можно за счёт команды /login ")
     else:
         bot.answer_callback_query(call.id, text="Я уже вышел из учётной записи майстат!")
+
+        
+@bot.message_handler(commands=["author"])
+def author_function(message):
+    if message.from_user.id == AUTHOR_ID:
+        bot.send_message(message.chat.id, "Это сообщение от автора! Ответь следующим сообщением, что ты хочешь"
+                                          "разослать всем пользователям")
+        dbworker.set_state(
+            message.chat.id, config.Mystat_logins_steps.S_AUTHOR_START.value)
+    else:
+        bot.send_message(message.chat.id, "Хей, у тебя нет прав автора!")
+
+
+@bot.message_handler(commands=["test"])
+def author_function(message):
+    bot.send_message(message.chat.id,"Я увидел твоё сообщение, друг!")
+    for id in list_of_user_ids():
+        bot.send_message(id[0], "Это сообщение от автора для всех!")
+
+@bot.message_handler(func=lambda message: dbworker.get_current_state(message.chat.id) == config.Mystat_logins_steps.S_AUTHOR_START.value)
+def send_message_all_function(message):
+    blog_text = message.text
+    for id in list_of_user_ids():
+        bot.send_message(id[0], str(blog_text))
+
 # Обновляем запросы по сообщениям
 if __name__ == '__main__':
     bot.polling(none_stop=True)
+    init_db()
 
 
