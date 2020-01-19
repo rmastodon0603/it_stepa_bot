@@ -32,8 +32,8 @@ Hihi = u'\U0001F601'
 @bot.message_handler(commands=["login"])
 def mystat_login(message):
     bot.send_message(
-        message.chat.id, "Привет дружище, меня зовут Степа и я буду помогать тебе , на пути к становлению IT-специалистом!!")
-        message.chat.id, "Введи ка мне логин чтоюы я смог получить информацию которая тебе в дальнейшем понадобится)")
+        message.chat.id, "Привет, меня зовут Стёпа и я буду помогать тебе, на пути к становлению IT-специалистом!")
+        message.chat.id, "Введи логин от Mystat.")
     dbworker.set_state(
         message.chat.id, config.Mystat_logins_steps.S_ENTER_LOGIN_MYSTAT.value)
 
