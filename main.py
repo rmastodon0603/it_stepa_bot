@@ -1,7 +1,11 @@
 import datetime
+import time
 
 import telebot
 from telebot import types
+
+import inline_calendar
+from inline_calendar import get_callback_next_month, get_callback_prev_month, set_down_all_markers
 
 import tokens
 import config
@@ -40,7 +44,6 @@ now = datetime.datetime.now()
 
 #Объявление смайлов для работы бота
 Hihi = u'\U0001F601'
-
 
 @bot.message_handler(commands=["start"])
 def mystat_login(message):
@@ -107,7 +110,6 @@ def user_entering_age(message):
     driver.quit()
     driver = webdriver.Chrome()
     driver.get("https://mystat.itstep.org/ru/main/settings/page/index")
-
     login_element = WebDriverWait(driver, 10).until(
         ec.presence_of_element_located((By.ID, 'username')))
     login_element.send_keys("Kova_pu05")
@@ -150,16 +152,19 @@ def shedule_global(message):
     cid = message.chat.id
     mid = message.message_id
     uid = message.from_user.id
-    click_kb = types.InlineKeyboardMarkup()
-    click_button = types.InlineKeyboardButton("Получить расписание на сегодня", callback_data='clicked')
-    click_kb.row(click_button)
+    shedule_kb = types.InlineKeyboardMarkup()
+    click_shedule_button = types.InlineKeyboardButton("Получить расписание на сегодня", callback_data='click_shedule_button')
+    shedule_kb.row(click_shedule_button)
+    click_month_shedule_button = types.InlineKeyboardButton("Получить расписание в другой день",
+                                                      callback_data='click_shedule_month_button')
+    shedule_kb.row(click_month_shedule_button)
     bot.send_message(cid, "<b>Что ты хочешь конкретно посмотреть в расписании?</b>", parse_mode="HTML",
-                     reply_markup=click_kb, disable_web_page_preview=True)
+                     reply_markup=shedule_kb, disable_web_page_preview=True)
     sleep(10)
     driver.quit()
-
+    
 # Вывод декоратора, если человек нажал на кнопку "Получить расписание сегодня." Выводит несколькими сообщениями расписание на сегодня.
-@bot.callback_query_handler(func=lambda call: call.data == 'clicked')
+@bot.callback_query_handler(func=lambda call: call.data == 'click_shedule_button')
 def command_click_inline(call):
     cid = call.message.chat.id
     uid = call.from_user.id
@@ -180,20 +185,21 @@ def command_click_inline(call):
         login_element = WebDriverWait(driver, 10).until(
             ec.presence_of_element_located((By.ID, 'username')))
         login_element.send_keys("Kova_pu05")
-        sleep(1)
+        #sleep(1)
         pass_element = WebDriverWait(driver, 10).until(
             ec.presence_of_element_located((By.ID, 'password')))
         pass_element.send_keys("51gB58ZF")
         pass_element.submit()
-        shedule_month = WebDriverWait(driver, 10).until(
-            ec.presence_of_element_located((By.XPATH,
-                                            '//div[@class="mount-cont"]//span[text()="Декабрь 2019"]')))
-        bot.send_message(cid, "Расписание доступно на: " + str(shedule_month.text))
+
         today_day_mystat = WebDriverWait(driver, 10).until(
             ec.presence_of_element_located((By.XPATH,
-                                            "/html/body/mystat/ng-component/ng-component/div[@class='wrap']/div[@class='content']/div[@class='wrapper']/ng-component/ng-component/div[@class='schedule-section']/div[@class='row']/div[@class='col-md-12 item']/div[@class='content-schedule']/div[@class='day-holder']/div[@class='day has-day is-today']//div[@class='active-day']")))
+                                            "/html/body/mystat/ng-component/ng-component/div[@class='wrap']/div["
+                                            "@class='content']/div[@class='wrapper']/ng-component/ng-component/div["
+                                            "@class='schedule-section']/div[@class='row']/div[@class='col-md-12 "
+                                            "item']/div[@class='content-schedule']/div[@class='day-holder']/div["
+                                            "@class='day has-day is-today']//div[@class='active-day']")))
         today_day_mystat.click()
-        sleep(5)
+        #sleep(5)
         element_all_lessons = WebDriverWait(driver, 30).until(
             ec.presence_of_all_elements_located((By.XPATH,
                                                  "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='less-name']")))
@@ -208,7 +214,7 @@ def command_click_inline(call):
                                                  "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='name-teacher']")))
         for number in range(len(element_all_lessons)):
             bot.send_message(cid, "Лекция: " + element_all_lessons[number].text + ". \nВремя: " + element_all_time[number].text + ". \nАудитория: " + element_all_places[number].text + ". \nПреподователь: " + element_all_teachers[number].text + ".")
-        sleep(5)
+        #sleep(5)
         driver.quit()
     else:
         bot.answer_callback_query(call.id, text="Расписание уже выведено!")
@@ -223,12 +229,11 @@ def function_statistics_mystat(message):
     login_element = WebDriverWait(driver, 10).until(
         ec.presence_of_element_located((By.ID, 'username')))
     login_element.send_keys("Kova_pu05")
-    sleep(1)
     pass_element = WebDriverWait(driver, 10).until(
         ec.presence_of_element_located((By.ID, 'password')))
     pass_element.send_keys("51gB58ZF")
     pass_element.submit()
-
+    sleep(10)
     student_place_in_group = WebDriverWait(driver, 10).until(
         ec.presence_of_element_located((By.XPATH,
                                         "/html/body/mystat/ng-component/ng-component/div[@class='wrap']/div[@class='content']/div[@class='wrapper']/ng-component/div[@class='container-fluid homepage-wrapper']/div[@class='row']/div[@class='col-md-12 main-flex-block']/leader-component/div[@class='leader-flex']/div[@class='row']/div[@class='col-md-6 rating-blocks block-item']/div[@class='ratings']/div[@class='inner with-bg']/div[@class='part part-rating']/div[@class='part-container']/div[@class='rating-content']/div[@class='rating rating-group']/div[@class='rating-position']")))
@@ -275,7 +280,6 @@ def function_statistics_mystat(message):
                          "\nКоины: " + str(mystat_coins.text) +
                          "\nБэйджи: " + str(mystat_badges.text) +
                          "\nПросроченные домашние задания: " + str(mystat_dead_homeworks.text), parse_mode="HTML")
-    sleep(5)
     driver.quit()
 
 #По слову "Контакты" ( кнопка в главном меню ) выводит из майстата контакты учебной части, приёмной и авторов бота
@@ -424,21 +428,296 @@ def author_function(message):
         bot.send_message(message.chat.id, "Хей, у тебя нет прав автора!")
 
 
-@bot.message_handler(commands=["test"])
-def author_function(message):
-    bot.send_message(message.chat.id,"Я увидел твоё сообщение, друг!")
-    for id in list_of_user_ids():
-        bot.send_message(id[0], "Это сообщение от автора для всех!")
+@bot.callback_query_handler(func=lambda call: call.data == 'click_shedule_month_button')
+def command_click_inline_shedule_month_button(call):
+    cid = call.message.chat.id
+    uid = call.from_user.id
+    mid = call.message.message_id
+    inline_calendar.init(uid,
+                         datetime.date.today(),
+                         datetime.date(year=2018, month=11, day=1),
+                         datetime.date(year=2020, month=12, day=31))
+    bot.send_message(uid, text='Введите нужную Вам дату: ', reply_markup=inline_calendar.get_keyboard(uid))
+
+@bot.callback_query_handler(func=inline_calendar.is_inline_calendar_callbackquery)
+def calendar_callback_handler(q: types.CallbackQuery):
+    bot.answer_callback_query(q.id)
+    
+    arrow_right_element_xpath_code = "/html/body/mystat/ng-component/ng-component/div[@class='wrap']/div[@class='content']/div[@class='wrapper']/ng-component/ng-component/div[@class='schedule-section']/div[@class='row']/div[@class='col-md-12 item']/div[@class='content-schedule']/div[@class='mount-cont']/span[@class='arrow-right']"
+    arrow_left_element_xpath_code = "/html/body/mystat/ng-component/ng-component/div[@class='wrap']/div[@class='content']/div[@class='wrapper']/ng-component/ng-component/div[@class='schedule-section']/div[@class='row']/div[@class='col-md-12 item']/div[@class='content-schedule']/div[@class='mount-cont']/span[@class='arrow-left']"
+
+
+    try:
+        return_data = inline_calendar.handler_callback(q.from_user.id, q.data)
+        if return_data is None:
+            print(return_data)
+            print(get_callback_prev_month())
+            print(get_callback_next_month())
+            bot.edit_message_reply_markup(chat_id=q.from_user.id, message_id=q.message.message_id,
+                                          reply_markup=inline_calendar.get_keyboard(q.from_user.id))
+            # В браузере кликать на изменение месяца
+            if get_callback_prev_month() == 1:
+                print('Я нажал стрелочку влево')
+
+            if get_callback_next_month() == 1:
+                print('Я нажал стрелочку вправо')
+
+        else:
+            picked_data = return_data
+            print(picked_data)
+            print(picked_data.day)
+            bot.edit_message_text(text='Выводим расписание лент на выбранную дату: {0}'.format(picked_data), chat_id=q.from_user.id, message_id=q.message.message_id)
+            # Вывод пар на выбранную человеком дату.
+
+            # Нахождение дня по выбранному дню месяца и открытие его
+            find_date_day = "/html/body/mystat/ng-component/ng-component/div[@class='wrap']/div[@class='content']/div[@class='wrapper']/ng-component/ng-component/div[@class='schedule-section']/div[@class='row']/div[@class='col-md-12 item']/div[@class='content-schedule']/div[@class='day-holder']/div[@class='day has-day'][{}]//div[@class='active-day']".format(picked_data.day)
+            print(find_date_day)
+
+            # Подсчёт изменения месяца у человека в работе с календарём
+            current_month_counter = 0
+            arrow_element_road = 0 # 0 - текущий месяц, 1 - месяца назад, 2 - месяца вперёд
+
+            #Введение str(picked_data.day)>today_day_mystat.text переменных
+            if get_callback_next_month()>get_callback_prev_month():
+                # Подсчёт стрелок, если месяц следующий
+                print("Стрелок вправо больше, чем стрелок влево")
+                current_month_counter = get_callback_next_month()-get_callback_prev_month()
+                print ("current_month_counter = " + str(current_month_counter))
+                arrow_element_road = 1
+                print ("arrow_element_road = " + str(arrow_element_road))
+
+
+                                #Открываем драйвер и заходим в расписание
+                # Открытие веб - драйвера в расписании текущего месяца. 
+                driver = webdriver.Chrome()
+                driver.get("https://mystat.itstep.org/ru/main/schedule/page/index")
+
+                login_element = WebDriverWait(driver, 10).until(
+                    ec.presence_of_element_located((By.ID, 'username')))
+                login_element.send_keys("Kova_pu05")
+                pass_element = WebDriverWait(driver, 10).until(
+                    ec.presence_of_element_located((By.ID, 'password')))
+                pass_element.send_keys("51gB58ZF")
+                pass_element.submit()
+
+                # Доходим до выбранного пользователя месяца
+
+                for i in range(current_month_counter):
+                    arrow_right_element = WebDriverWait(driver, 10).until(ec.presence_of_element_located((By.XPATH, arrow_right_element_xpath_code)))
+                    arrow_right_element.click()
+                    sleep(5)
+
+                # Выводим пары по дню, который он выбрал 
+                # Выгрузка из find_date информации о парах (default как мы достаём данные о парах)
+                find_date_day_xpath = WebDriverWait(driver, 10).until(
+                    ec.presence_of_element_located((By.XPATH,str(find_date_day))))
+                find_date_day_xpath.click()
+                element_all_lessons = WebDriverWait(driver, 30).until(
+                    ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='less-name']")))
+                element_all_time = WebDriverWait(driver, 30).until(
+                    ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='time-place']/span[@class='time']")))
+                element_all_places = WebDriverWait(driver, 30).until(
+                    ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='time-place']/span[@class='place']/span[@class='num']")))
+                element_all_teachers = WebDriverWait(driver, 30).until(
+                    ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='name-teacher']")))
+                for number in range(len(element_all_lessons)):
+                    bot.send_message(q.from_user.id, "Лекция: " + element_all_lessons[number].text + ". \nВремя: " + element_all_time[number].text + ". \nАудитория: " + element_all_places[number].text + ". \nПреподователь: " + element_all_teachers[number].text + ".")
+            
+                # Закрываем драйвер и снимаем все маркеры
+                set_down_all_markers()
+                driver.quit()
+
+
+            elif get_callback_next_month()==get_callback_prev_month():
+                # Подсчёт стрелок, если месяц текущий
+                print("Человек остановился на текущем месте")
+                current_month_counter = 0
+                print ("current_month_counter = " + str(current_month_counter))
+                arrow_element_road = 0
+                print ("arrow_element_road = " + str(arrow_element_road))
+
+                # Открытие веб - драйвера в расписании текущего месяца. 
+                driver = webdriver.Chrome()
+                driver.get("https://mystat.itstep.org/ru/main/schedule/page/index")
+
+                login_element = WebDriverWait(driver, 10).until(
+                    ec.presence_of_element_located((By.ID, 'username')))
+                login_element.send_keys("Kova_pu05")
+                pass_element = WebDriverWait(driver, 10).until(
+                    ec.presence_of_element_located((By.ID, 'password')))
+                pass_element.send_keys("51gB58ZF")
+                pass_element.submit()
+
+                # Проверка выбранный день совпадает с has-day is today?
+                today_day_mystat = WebDriverWait(driver, 10).until(
+                    ec.presence_of_element_located((By.XPATH,
+                                    "/html/body/mystat/ng-component/ng-component/div[@class='wrap']/div[@class='content']/div[@class='wrapper']/ng-component/ng-component/div[@class='schedule-section']/div[@class='row']/div[@class='col-md-12 item']/div[@class='content-schedule']/div[@class='day-holder']/div[@class='day has-day is-today']//div[@class='active-day']")))
+
+
+                print("Find has day is today = " + today_day_mystat.text)
+                today_int_day_mystat = int(today_day_mystat.text)
+
+                if picked_data.day==today_int_day_mystat:
+                    print("Человек выбрал сегодняшний день!")
+                    today_day_mystat.click()
+                    element_all_lessons = WebDriverWait(driver, 30).until(
+                        ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='less-name']")))
+                    element_all_time = WebDriverWait(driver, 30).until(
+                        ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='time-place']/span[@class='time']")))
+                    element_all_places = WebDriverWait(driver, 30).until(
+                        ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='time-place']/span[@class='place']/span[@class='num']")))
+                    element_all_teachers = WebDriverWait(driver, 30).until(
+                        ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='name-teacher']")))
+                    for number in range(len(element_all_lessons)):
+                        bot.send_message(q.from_user.id, "Лекция: " + element_all_lessons[number].text + ". \nВремя: " + element_all_time[number].text + ". \nАудитория: " + element_all_places[number].text + ". \nПреподователь: " + element_all_teachers[number].text + ".")
+            
+                    # Закрываем драйвер и снимаем все маркеры
+                    set_down_all_markers()
+                    driver.quit()
+
+                elif picked_data.day>today_int_day_mystat:
+                    print("Человек выбрал какой - то другой день в этом месяце, но не сегодняшний!")
+                    # Проверка это день перед или после has-day is today?
+                    print(str(picked_data.day) + " ? " + today_day_mystat.text)
+                    print("Человек выбрал день, который идёт после текущего дня!")
+                    find_date_day = "/html/body/mystat/ng-component/ng-component/div[@class='wrap']/div[@class='content']/div[@class='wrapper']/ng-component/ng-component/div[@class='schedule-section']/div[@class='row']/div[@class='col-md-12 item']/div[@class='content-schedule']/div[@class='day-holder']/div[@class='day has-day'][{}]//div[@class='active-day']".format(picked_data.day-1)
+
+                    print(find_date_day)
+                    find_date_day_xpath = WebDriverWait(driver, 10).until(
+                        ec.presence_of_element_located((By.XPATH,str(find_date_day))))
+                    find_date_day_xpath.click()
+                    element_all_lessons = WebDriverWait(driver, 30).until(
+                        ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='less-name']")))
+                    element_all_time = WebDriverWait(driver, 30).until(
+                        ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='time-place']/span[@class='time']")))
+                    element_all_places = WebDriverWait(driver, 30).until(
+                        ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='time-place']/span[@class='place']/span[@class='num']")))
+                    element_all_teachers = WebDriverWait(driver, 30).until(
+                        ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='name-teacher']")))
+                    for number in range(len(element_all_lessons)):
+                        bot.send_message(q.from_user.id, "Лекция: " + element_all_lessons[number].text + ". \nВремя: " + element_all_time[number].text + ". \nАудитория: " + element_all_places[number].text + ". \nПреподователь: " + element_all_teachers[number].text + ".")
+            
+                    # Закрываем драйвер и снимаем все маркеры
+                    set_down_all_markers()
+                    driver.quit()
+                elif picked_data.day<today_int_day_mystat:
+                    print("Человек выбрал день перед текущим в этом месяце!")
+                    find_date_day_xpath = WebDriverWait(driver, 10).until(
+                        ec.presence_of_element_located((By.XPATH,str(find_date_day))))
+                    find_date_day_xpath.click()
+                    element_all_lessons = WebDriverWait(driver, 30).until(
+                        ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='less-name']")))
+                    element_all_time = WebDriverWait(driver, 30).until(
+                        ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='time-place']/span[@class='time']")))
+                    element_all_places = WebDriverWait(driver, 30).until(
+                        ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='time-place']/span[@class='place']/span[@class='num']")))
+                    element_all_teachers = WebDriverWait(driver, 30).until(
+                        ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='name-teacher']")))
+                    for number in range(len(element_all_lessons)):
+                        bot.send_message(q.from_user.id, "Лекция: " + element_all_lessons[number].text + ". \nВремя: " + element_all_time[number].text + ". \nАудитория: " + element_all_places[number].text + ". \nПреподователь: " + element_all_teachers[number].text + ".")
+            
+                    # Закрываем драйвер и снимаем все маркеры
+                    set_down_all_markers()
+                    driver.quit()
+
+            else:
+
+                # Подсчёт стрелок, если месяц предыдущий
+                print("Больше стрелок влево, чем вправо")
+                current_month_counter = get_callback_prev_month()-get_callback_next_month()
+                print(current_month_counter)
+                print ("current_month_counter = " + str(current_month_counter))
+                arrow_element_road = 2
+                print ("arrow_element_road = " + str(arrow_element_road))
+
+                #Открываем драйвер и заходим в расписание
+                # Открытие веб - драйвера в расписании текущего месяца. 
+                driver = webdriver.Chrome()
+                driver.get("https://mystat.itstep.org/ru/main/schedule/page/index")
+
+                login_element = WebDriverWait(driver, 10).until(
+                    ec.presence_of_element_located((By.ID, 'username')))
+                login_element.send_keys("Kova_pu05")
+                pass_element = WebDriverWait(driver, 10).until(
+                    ec.presence_of_element_located((By.ID, 'password')))
+                pass_element.send_keys("51gB58ZF")
+                pass_element.submit()
+
+                # Доходим до выбранного пользователя месяца
+
+                for i in range(current_month_counter):
+                    arrow_left_element = WebDriverWait(driver, 10).until(ec.presence_of_element_located((By.XPATH, arrow_left_element_xpath_code)))
+                    arrow_left_element.click()
+                    sleep(5)
+
+                # Выводим пары по дню, который он выбрал 
+                # Выгрузка из find_date информации о парах (default как мы достаём данные о парах)
+                find_date_day_xpath = WebDriverWait(driver, 10).until(
+                    ec.presence_of_element_located((By.XPATH,str(find_date_day))))
+                find_date_day_xpath.click()
+                element_all_lessons = WebDriverWait(driver, 30).until(
+                    ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='less-name']")))
+                element_all_time = WebDriverWait(driver, 30).until(
+                    ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='time-place']/span[@class='time']")))
+                element_all_places = WebDriverWait(driver, 30).until(
+                    ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='time-place']/span[@class='place']/span[@class='num']")))
+                element_all_teachers = WebDriverWait(driver, 30).until(
+                    ec.presence_of_all_elements_located((By.XPATH,
+                                                     "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='on-hover']/div[@class='lessons']/span[@class='name-teacher']")))
+                for number in range(len(element_all_lessons)):
+                    bot.send_message(q.from_user.id, "Лекция: " + element_all_lessons[number].text + ". \nВремя: " + element_all_time[number].text + ". \nАудитория: " + element_all_places[number].text + ". \nПреподователь: " + element_all_teachers[number].text + ".")
+            
+                # Закрываем драйвер и снимаем все маркеры
+                set_down_all_markers()
+                driver.quit()
+
+
+
+    except inline_calendar.WrongChoiceCallbackException:
+        bot.edit_message_text(text='Вы нажали что - то запрещённое..', chat_id=q.from_user.id, message_id=q.message.message_id,
+                              reply_markup=inline_calendar.get_keyboard(q.from_user.id))
 
 @bot.message_handler(func=lambda message: dbworker.get_current_state(message.chat.id) == config.Mystat_logins_steps.S_AUTHOR_START.value)
 def send_message_all_function(message):
     blog_text = message.text
     for id in list_of_user_ids():
         bot.send_message(id[0], str(blog_text))
+        sleep(5)
+
+
+#Вызов test команды
+@bot.message_handler(commands=["test"])
+def test_function_name(message):
+    driver = webdriver.Chrome()
+    sleep(5)
+    driver.quit()
 
 # Обновляем запросы по сообщениям
-if __name__ == '__main__':
-    bot.polling(none_stop=True)
-    init_db()
-
+while True:
+    try:
+        bot.polling(none_stop=True, interval=2)
+        break
+    except Exception as ex:
+        print(ex)
+        bot.stop_polling()
+        time.sleep(15)
 

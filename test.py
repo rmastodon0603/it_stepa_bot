@@ -8,34 +8,32 @@ from time import sleep
 import time
 
 
-old_mystat_news = ""
+# Открытие веб - драйвера в расписании текущего месяца. 
+driver = webdriver.Chrome()
+driver.get("https://mystat.itstep.org/ru/main/schedule/page/index")
 
-while True:
-    driver = webdriver.Chrome()
-    driver.get("https://mystat.itstep.org/ru/main/news/page/index")
+login_element = WebDriverWait(driver, 10).until(
+    ec.presence_of_element_located((By.ID, 'username')))
+login_element.send_keys("Kova_pu05")
+#sleep(1)
+pass_element = WebDriverWait(driver, 10).until(
+    ec.presence_of_element_located((By.ID, 'password')))
+pass_element.send_keys("51gB58ZF")
+pass_element.submit()
 
-    login_element = WebDriverWait(driver, 10).until(
-        ec.presence_of_element_located((By.ID, 'username')))
-    login_element.send_keys("Kova_pu05")
-    sleep(1)
-    pass_element = WebDriverWait(driver, 10).until(
-        ec.presence_of_element_located((By.ID, 'password')))
-    pass_element.send_keys("51gB58ZF")
-    pass_element.submit()
-    mystat_last_news = WebDriverWait(driver, 10).until(
-        ec.presence_of_element_located((By.XPATH,"/html/body/mystat/ng-component/ng-component/div[@class='wrap']/div[@class='content']/div[@class='wrapper']/ng-component/div[@class='news-section']/div[@class='row']/div[@class='col-md-4 item'][1]/div[@class='news-container']/div[@class='logo']")))
-    if mystat_last_news.text == old_mystat_news:
-        print("Новых новостей нету.")
-    else:
-        print("Новая новость: " + str(mystat_last_news.text) + " .")
-        old_mystat_news = mystat_last_news.text
+# Отработка взаимодействия нажатий на стрелочки в цикле влево
+#arrow_left_element_xpath_code = "/html/body/mystat/ng-component/ng-component/div[@class='wrap']/div[@class='content']/div[@class='wrapper']/ng-component/ng-component/div[@class='schedule-section']/div[@class='row']/div[@class='col-md-12 item']/div[@class='content-schedule']/div[@class='mount-cont']/span[@class='arrow-left']"
+#arrow_left_element = WebDriverWait(driver, 10).until(ec.presence_of_element_located((By.XPATH, arrow_left_element_xpath_code)))
+#arrow_left_element.click()
 
-        #Вывод новости "Подробнее"
-        mystat_news_more = WebDriverWait(driver, 10).until(
-            ec.presence_of_element_located((By.XPATH, "/html/body/mystat/ng-component/ng-component/div[@class='wrap']/div[@class='content']/div[@class='wrapper']/ng-component/div[@class='news-section']/div[@class='row']/div[@class='col-md-4 item'][1]/div[@class='news-container']")))
-        mystat_news_more.click()
-        mystat_news_description = WebDriverWait(driver, 10).until(
-            ec.presence_of_element_located((By.XPATH, "/html/body[@class='modal-open']/modal-container[@class='modal fade show']/div[@class='modal-dialog']/div[@class='modal-content']/div[@class='big-news-container']")))
-        print("Подробная информация о новости: " + str(mystat_news_description.text))
-        driver.quit()
-        time.sleep(20)
+# Отработка взаимодейсвтий нажатий на стрелочку в цикле вправо
+arrow_right_element_xpath_code = "/html/body/mystat/ng-component/ng-component/div[@class='wrap']/div[@class='content']/div[@class='wrapper']/ng-component/ng-component/div[@class='schedule-section']/div[@class='row']/div[@class='col-md-12 item']/div[@class='content-schedule']/div[@class='mount-cont']/span[@class='arrow-right']"
+
+# Отработка цикла нажатий стрелочек
+for i in range(2):
+    arrow_right_element = WebDriverWait(driver, 10).until(ec.presence_of_element_located((By.XPATH, arrow_right_element_xpath_code)))
+    arrow_right_element.click()
+    sleep(5)
+
+sleep(15)
+driver.quit()
